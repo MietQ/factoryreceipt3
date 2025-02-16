@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FactoryReceipt - Strona Główna</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    header {
+      background-color: #e0e0e0;
+      padding: 10px;
+      text-align: right;
+    }
+    header span {
+      margin-right: 20px;
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 20px;
+    }
+    .shop-tile {
+      background-color: #ddd;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .shop-tile:hover {
+      background-color: #ccc;
+    }
+    #formContainer, #emailContainer {
+      margin: 20px;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <span>ID: <span id="accountId">Loading...</span></span>
+  <span>E-mail: <span id="emailDisplay">Loading...</span></span>
+  <span>Potwierdzenia: <span id="confirmationInfo">Loading...</span></span>
+  <button onclick="logout()">Wyloguj</button>
+</header>
+
+<div class="grid-container" id="shopsContainer">
+  <!-- Tutaj dynamicznie wyświetlimy sklepy z bazy -->
+</div>
+
+<!-- Formularz dla sklepu – będzie generowany dynamicznie -->
+<div id="formContainer" style="display:none;"></div>
+
+<!-- Formularz do zmiany e-maila -->
+<div id="emailContainer" style="display:block;">
+  <h2>Zmiana e-maila</h2>
+  <form id="emailForm">
+    <label for="newEmail">Nowy e-mail:</label><br>
+    <input type="email" id="newEmail" name="newEmail" required><br><br>
+    <button type="submit">Zmień e-mail</button>
+  </form>
+</div>
+
+<script>
+  // Funkcja pobierająca dane konta
+  function loadAccountData() {
+    const userId = localStorage.getItem("loggedUserId");
+    if (!userId) {
+      alert("Brak zalogowanego użytkownika. Zaloguj się ponownie.");
+      window.location.href = "login.html";
+      return;
+    }
+    fetch('/api/account/' + userId)
+      .then(response => {
+        if (!response.ok) throw new Error("Błąd przy pobieraniu danych konta: " + response.statusText);
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('accountId').innerText = data.userId;
+        document.getElementById('emailDisplay').innerText = data.email ? data.email : "Brak e-maila";
+        if (data.accountType.toLowerCase() === "limit") {
+          document.getElementById('confirmationInfo').innerText = data.usageLimit;
+        } else if (data.accountType.toLowerCase() === "time") {
+          if (data.expirationDate) {
+            const date = new Date(data.expirationDate);
+            document.getElementById('confirmationInfo').innerText = "Wygasa: " + date.toLocaleString();
+          } else {
+            document.getElementById('confirmationInfo').innerText = "Czasowe (brak daty)";
+          }
+        } else {
+          document.getElementById('confirmationInfo').innerText = "Unlimited";
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById('accountId').innerText = "Error";
+        document.getElementById('emailDisplay').innerText = "Error";
+        document.getElementById('confirmationInfo').innerText = "Error";
+      });
+  }
+
+  // Pobieranie listy sklepów i wyświetlanie ich jako kafelki
+  function loadShops() {
+    fetch('/admin/shops', {
+      method: "GET"
+    })
+    .then(resp => {
+      if (!resp.ok) throw new Error("Błąd: " + resp.statusText);
+      return resp.json();
+    })
+    .then(shops => {
+      const container = document.getElementById('shopsContainer');
+      container.innerHTML = "";
+      shops.forEach(shop => {
+        const tile = document.createElement('div');
+        tile.classList.add('shop-tile');
+        tile.textContent = shop.shopName;
+        tile.onclick = () => openShopForm(shop);
+        container.appendChild(tile);
+      });
+    })
+    .catch(err => console.error('Błąd przy pobieraniu sklepów:', err));
+  }
+
+  // Dynamiczne generowanie formularza dla sklepu
+  function openShopForm(shop) {
+    const formContainer = document.getElementById('formContainer');
+    formContainer.style.display = 'block';
+    formContainer.innerHTML = `<h2>Generowanie potwierdzenia dla ${shop.shopName}</h2>`;
+
+    // Parsowanie konfiguracji formularza (JSON)
+    let config = {};
+    if (shop.formConfig) {
+      try {
+        config = JSON.parse(shop.formConfig);
+      } catch (e) {
+        console.error('Błędny JSON w formConfig:', e);
+      }
+    }
+
+    const form = document.createElement('form');
+    form.id = 'dynamicShopForm';
+
+    // Tworzenie pól formularza dynamicznie
+    for (const field in config) {
+      const label = document.createElement('label');
+      label.textContent = config[field] + ":";
+      form.appendChild(label);
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = field;
+      input.id = field;
+      input.required = true;
+      form.appendChild(input);
+      form.appendChild(document.createElement('br'));
+      form.appendChild(document.createElement('br'));
+    }
+
+    // Dodajemy przycisk do wysyłania formularza
+    const btn = document.createElement('button');
+    btn.type = 'submit';
+    btn.textContent = 'Wyślij potwierdzenie';
+    form.appendChild(btn);
+    formContainer.appendChild(form);
+
+    // Obsługa submit formularza
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const userId = localStorage.getItem("loggedUserId");
+      if (!userId) {
+        alert("Brak zalogowanego użytkownika.");
+        return;
+      }
+
+      const formData = {};
+      for (const field in config) {
+        formData[field] = document.getElementById(field).value;
+      }
+      formData.userId = userId;
+
+      // Wywołanie endpointu dla sklepu (np. POST /api/shops/{shopName})
+      fetch('/api/shops/' + shop.shopName, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Błąd: " + response.statusText);
+        return response.text();
+      })
+      .then(data => {
+        alert(data);
+      })
+      .catch(err => {
+        alert('Błąd przy wysyłaniu potwierdzenia: ' + err);
+      });
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem("loggedUserId");
+    localStorage.removeItem("jwtToken");
+    window.location.href = "login.html";
+  }
+
+  // Ładujemy dane konta oraz sklepy przy starcie
+  window.onload = function() {
+    loadAccountData();
+    loadShops();
+  };
+</script>
+</body>
+</html>
