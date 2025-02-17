@@ -23,7 +23,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Zezwól na statyczne zasoby i strony publiczne
+                        // Zezwól na statyczne zasoby i strony publiczne (HTML, CSS, JS)
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login.html", "/css/**", "/js/**", "/images/**", "/admin.html").permitAll()
                         // Zezwól na dostęp do konsoli H2
                         .requestMatchers("/h2-console/**").permitAll()
@@ -31,11 +31,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/login", "/api/createAccount").permitAll()
                         // Zezwól na odczyt danych konta
                         .requestMatchers(HttpMethod.GET, "/api/account/**").permitAll()
-                        // Zezwól na wysyłkę potwierdzeń
-                        .requestMatchers(HttpMethod.POST, "/api/shops/stockx").permitAll()
-                        // Zezwól na aktualizację e-maila (np. publicznie – możesz to zabezpieczyć inaczej, jeśli chcesz)
+                        // Zezwól na aktualizację e-maila
                         .requestMatchers(HttpMethod.PUT, "/api/account/updateEmail").permitAll()
-                        // Pozostałe żądania wymagają autoryzacji
+                        // Zezwól na pobranie listy sklepów
+                        .requestMatchers(HttpMethod.GET, "/admin/shops").permitAll()
+
+                        // --- NOWA REGUŁA ---
+                        // Zezwól na POST do /api/shops/{cokolwiek}, żeby można było generować potwierdzenia
+                        .requestMatchers(HttpMethod.POST, "/api/shops/**").permitAll()
+
+                        // Pozostałe żądania wymagają autoryzacji (JWT)
                         .anyRequest().authenticated()
                 )
                 // Pozwól na wyświetlanie konsoli H2 w ramce
@@ -43,7 +48,9 @@ public class SecurityConfig {
                 // Ustaw sesję jako bezstanową (JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+        // Filtr JWT przed UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 

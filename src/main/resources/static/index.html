@@ -4,84 +4,388 @@
   <meta charset="UTF-8">
   <title>FactoryReceipt - Strona Główna</title>
   <style>
+    /* Ustawienia globalne */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
       background-color: #f9f9f9;
+      color: #441752; /* Domyślny kolor tekstu */
     }
+
+    /* Nagłówek */
     header {
-      background-color: #e0e0e0;
+      position: relative;
+      background-color: #441752;
       padding: 10px;
-      text-align: right;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    header span {
-      margin-right: 20px;
+
+    /* Sekcja flag (po lewej) */
+    #langSwitcher {
+      display: flex;
+      align-items: center;
+      margin-left: 10px;
     }
+    #langSwitcher button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-right: 5px;
+      padding: 0;
+    }
+    #langSwitcher button img {
+      width: 35px;
+      height: auto;
+      border-radius: 6px;
+      /* Delikatne zmniejszenie nasycenia, by wyglądały mniej realistycznie */
+      filter: saturate(70%);
+      transition: filter 0.3s, transform 0.3s;
+    }
+    #langSwitcher button img:hover {
+      filter: saturate(100%);
+      transform: scale(1.05);
+    }
+
+    /* Prawa sekcja nagłówka (ID, e-mail, potwierdzenia, wylogowanie, rozwijany formularz) */
+    .header-right {
+      display: flex;
+      align-items: center;
+    }
+    .header-right span {
+      margin-right: 10px;
+    }
+
+    /* Przycisk Wyloguj */
+    #logoutBtn {
+      background-color: #8174A0;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-right: 5px;
+    }
+    #logoutBtn:hover {
+      background-color: #A888B5;
+    }
+
+    /* Przycisk rozwijania formularza e-mail (strzałka) */
+    #toggleEmailBtn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      margin-right: 10px;
+      transition: transform 0.3s;
+    }
+    #toggleEmailBtn:hover {
+      transform: scale(1.2);
+    }
+
+    /* Minimalistyczny panel z formularzem zmiany e-maila (ukryty domyślnie) */
+    #emailContainer {
+      position: absolute;
+      top: 60px; /* dostosuj w razie potrzeby */
+      right: 10px;
+      display: none; /* ukrywamy do czasu kliknięcia */
+      background-color: #fff;
+      border: 1px solid #8174A0;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      min-width: 220px;
+      z-index: 999; /* aby nie chował się pod inne elementy */
+    }
+    #emailContainer form {
+      margin: 0;
+    }
+
+    /* Styl pól formularza w panelu e-mail i przycisku */
+    input[type="email"], input[type="text"] {
+      width: 100%;
+      box-sizing: border-box; /* Zapobiega wystawaniu pola */
+      padding: 8px;
+      margin: 5px 0 10px;
+      border: 1px solid #8174A0;
+      border-radius: 4px;
+    }
+    button[type="submit"] {
+      background-color: #8174A0;
+      color: #fff;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button[type="submit"]:hover {
+      background-color: #A888B5;
+    }
+
+    /* Grid i kafelki sklepów – maksymalnie 3 w rzędzie */
     .grid-container {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 15px;
       padding: 20px;
     }
     .shop-tile {
-      background-color: #ddd;
+      background-color: #A888B5;
+      color: #fff;
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      border-radius: 5px;
-      transition: background-color 0.3s;
+      border-radius: 8px;
+      transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     .shop-tile:hover {
-      background-color: #ccc;
+      background-color: #EFB6C8;
+      transform: scale(1.05);
     }
-    #formContainer, #emailContainer {
-      margin: 20px;
-      padding: 20px;
+
+    /* Modalny overlay */
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none; /* domyślnie ukryty */
+      justify-content: center;
+      align-items: center;
+      z-index: 1000; /* nad innymi elementami */
+    }
+
+    /* Kontener na formularz w modalnym oknie */
+    #formContainer {
       background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 5px;
+      border: 1px solid #8174A0;
+      border-radius: 8px;
       width: 300px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: relative; /* dla przycisku X */
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Przycisk X do zamknięcia modalnego okna */
+    .closeBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #441752;
+      transition: transform 0.2s;
+    }
+    .closeBtn:hover {
+      transform: scale(1.2);
+    }
+
+    /* Styl pól w formularzu potwierdzenia (tworzonym dynamicznie) */
+    #dynamicForm input[type="text"],
+    #dynamicForm input[type="email"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #8174A0;
+      border-radius: 4px;
+    }
+
+    /* Duży przycisk wysyłania na dole okienka */
+    #dynamicForm button[type="submit"] {
+      width: 100%;
+      background-color: #8174A0;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    #dynamicForm button[type="submit"]:hover {
+      background-color: #A888B5;
     }
   </style>
 </head>
 <body>
 <header>
-  <span>ID: <span id="accountId">Loading...</span></span>
-  <span>E-mail: <span id="emailDisplay">Loading...</span></span>
-  <span>Potwierdzenia: <span id="confirmationInfo">Loading...</span></span>
-  <button onclick="logout()">Wyloguj</button>
+  <!-- Flagi językowe po lewej -->
+  <div id="langSwitcher">
+    <button onclick="setLanguage('pl')">
+      <img
+              src="https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Flag_of_Poland.svg/60px-Flag_of_Poland.svg.png"
+              alt="Polski"
+              title="Polski"
+      >
+    </button>
+    <button onclick="setLanguage('en')">
+      <img
+              src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/60px-Flag_of_the_United_States.svg.png"
+              alt="English"
+              title="English"
+      >
+    </button>
+  </div>
+
+  <!-- Prawa część nagłówka: ID, e-mail, potwierdzenia, wylogowanie, rozwijany formularz -->
+  <div class="header-right">
+    <span id="labelId">ID:</span> <span id="accountId">Loading...</span>
+    <span id="labelEmail">E-mail:</span> <span id="emailDisplay">Loading...</span>
+    <span id="labelConfirmations">Potwierdzenia:</span> <span id="confirmationInfo">Loading...</span>
+
+    <!-- Strzałka do rozwijania formularza zmiany e-maila (po lewej od Wyloguj) -->
+    <button id="toggleEmailBtn">▼</button>
+    <button id="logoutBtn" onclick="logout()">Wyloguj</button>
+
+    <!-- Ukryty (domyślnie) panel z minimalistycznym formularzem e-mail -->
+    <div id="emailContainer">
+      <form id="emailForm">
+        <label for="newEmail" id="emailLabel">Nowy e-mail:</label><br>
+        <!-- Placeholder z przykładem -->
+        <input type="email" id="newEmail" name="newEmail" required placeholder="example@gmail.com"><br>
+        <button type="submit" id="emailBtn">Zmień e-mail</button>
+      </form>
+    </div>
+  </div>
 </header>
 
-<div class="grid-container" id="shopsContainer">
-  <!-- Tutaj dynamicznie wyświetlimy sklepy z bazy -->
+<!-- Kafelek dla StockX – zawsze widoczny -->
+<div class="grid-container">
+  <div class="shop-tile" onclick="openShopForm('StockX')">StockX</div>
 </div>
 
-<!-- Formularz dla sklepu – będzie generowany dynamicznie -->
-<div id="formContainer" style="display:none;"></div>
+<!-- Kontener dynamiczny – wyświetlany tylko w wersji polskiej -->
+<div class="grid-container" id="shopsContainerDynamic"></div>
 
-<!-- Formularz do zmiany e-maila -->
-<div id="emailContainer" style="display:block;">
-  <h2>Zmiana e-maila</h2>
-  <form id="emailForm">
-    <label for="newEmail">Nowy e-mail:</label><br>
-    <input type="email" id="newEmail" name="newEmail" required><br><br>
-    <button type="submit">Zmień e-mail</button>
-  </form>
+<!-- Modalny overlay + kontener na formularz generowania potwierdzenia -->
+<div id="modalOverlay">
+  <div id="formContainer">
+    <button class="closeBtn" onclick="closeModal()">✕</button>
+    <!-- Tu wstrzykniemy dynamiczny formularz (openShopForm) -->
+  </div>
 </div>
 
 <script>
-  // Funkcja pobierająca dane konta
+  // Globalna zmienna przechowująca bieżący język (domyślnie polski)
+  let currentLanguage = localStorage.getItem('lang') || 'pl';
+
+  // Słownik tłumaczeń
+  const translations = {
+    pl: {
+      header: {
+        id: "ID:",
+        email: "E-mail:",
+        confirmations: "Potwierdzenia:",
+        logout: "Wyloguj"
+      },
+      emailForm: {
+        label: "Nowy e-mail:",
+        button: "Zmień e-mail"
+      },
+      shopForm: {
+        title: "Generowanie potwierdzenia dla",
+        productName: "Nazwa produktu:",
+        price: "Cena:",
+        productCode: "Kod produktu:",
+        photo: "Link do zdjęcia:",
+        deliveryTime: "Czas dostawy:",
+        // dodatkowe pola dla MediaExpert
+        deliveryDate: "Data dostawy:",
+        address: "Adres paczkomatu:",
+        city: "Kod i miasto:",
+        phoneNumber: "Ostatnie 3 cyfry numeru:",
+        submit: "Wyślij potwierdzenie"
+      },
+      noUser: "Brak zalogowanego użytkownika. Zaloguj się ponownie.",
+      errorAccountData: "Błąd przy pobieraniu danych konta:",
+      errorSending: "Błąd przy wysyłaniu potwierdzenia:",
+      successEmail: "Sukces: ",
+      errorEmail: "Błąd: "
+    },
+    en: {
+      header: {
+        id: "ID:",
+        email: "Email:",
+        confirmations: "Confirmations:",
+        logout: "Logout"
+      },
+      emailForm: {
+        label: "New email:",
+        button: "Change Email"
+      },
+      shopForm: {
+        title: "Generating receipt for",
+        productName: "Product Name:",
+        price: "Price:",
+        productCode: "Product Code:",
+        photo: "Photo URL:",
+        deliveryTime: "Delivery Time:",
+        // dodatkowe pola dla MediaExpert
+        deliveryDate: "Delivery Date:",
+        address: "Parcel Machine Address:",
+        city: "Postal Code and City:",
+        phoneNumber: "Last 3 digits of phone number:",
+        submit: "Submit Receipt"
+      },
+      noUser: "No logged in user. Please log in again.",
+      errorAccountData: "Error fetching account data:",
+      errorSending: "Error sending receipt:",
+      successEmail: "Success: ",
+      errorEmail: "Error: "
+    }
+  };
+
+  // Funkcja aktualizująca teksty na stronie zgodnie z bieżącym językiem
+  function updateText() {
+    // Aktualizacja nagłówka
+    document.getElementById('labelId').innerText = translations[currentLanguage].header.id;
+    document.getElementById('labelEmail').innerText = translations[currentLanguage].header.email;
+    document.getElementById('labelConfirmations').innerText = translations[currentLanguage].header.confirmations;
+    document.getElementById('logoutBtn').innerText = translations[currentLanguage].header.logout;
+
+    // Formularz zmiany e-maila (label + button)
+    document.getElementById('emailLabel').innerText = translations[currentLanguage].emailForm.label;
+    document.getElementById('emailBtn').innerText = translations[currentLanguage].emailForm.button;
+  }
+
+  // Funkcja ustawiająca język
+  function setLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('lang', lang);
+    updateText();
+    // Wersja angielska – ukryj dynamiczne sklepy, wersja polska – ładuj sklepy
+    if (currentLanguage === 'en') {
+      document.getElementById('shopsContainerDynamic').style.display = 'none';
+    } else {
+      document.getElementById('shopsContainerDynamic').style.display = 'grid';
+      loadShops();
+    }
+  }
+
+  // Ładowanie danych konta
   function loadAccountData() {
     const userId = localStorage.getItem("loggedUserId");
     if (!userId) {
-      alert("Brak zalogowanego użytkownika. Zaloguj się ponownie.");
+      alert(translations[currentLanguage].noUser);
       window.location.href = "login.html";
       return;
     }
     fetch('/api/account/' + userId)
       .then(response => {
-        if (!response.ok) throw new Error("Błąd przy pobieraniu danych konta: " + response.statusText);
+        if (!response.ok) throw new Error(translations[currentLanguage].errorAccountData + response.statusText);
         return response.json();
       })
       .then(data => {
@@ -108,115 +412,173 @@
       });
   }
 
-  // Pobieranie listy sklepów i wyświetlanie ich jako kafelki
+  // Ładowanie sklepów – wykonywane tylko, gdy język to polski
   function loadShops() {
-    fetch('/admin/shops', {
-      method: "GET"
-    })
-    .then(resp => {
-      if (!resp.ok) throw new Error("Błąd: " + resp.statusText);
-      return resp.json();
-    })
-    .then(shops => {
-      const container = document.getElementById('shopsContainer');
-      container.innerHTML = "";
-      shops.forEach(shop => {
-        const tile = document.createElement('div');
-        tile.classList.add('shop-tile');
-        tile.textContent = shop.shopName;
-        tile.onclick = () => openShopForm(shop);
-        container.appendChild(tile);
-      });
-    })
-    .catch(err => console.error('Błąd przy pobieraniu sklepów:', err));
+    if (currentLanguage !== 'pl') {
+      document.getElementById('shopsContainerDynamic').innerHTML = "";
+      return;
+    }
+    fetch('/admin/shops', { method: "GET" })
+      .then(resp => {
+        if (!resp.ok) throw new Error("Błąd: " + resp.statusText);
+        return resp.json();
+      })
+      .then(shops => {
+        const container = document.getElementById('shopsContainerDynamic');
+        container.innerHTML = "";
+        shops.forEach(shop => {
+          const tile = document.createElement('div');
+          tile.classList.add('shop-tile');
+          tile.textContent = shop.shopName;
+          // Po kliknięciu przekazujemy nazwę sklepu
+          tile.onclick = () => openShopForm(shop.shopName);
+          container.appendChild(tile);
+        });
+      })
+      .catch(err => console.error('Błąd przy pobieraniu sklepów:', err));
   }
 
-  // Dynamiczne generowanie formularza dla sklepu
-  function openShopForm(shop) {
+  // Funkcja otwierająca modal i wstrzykująca do niego formularz
+  function openShopForm(shopName) {
+    // Pokazujemy overlay
+    document.getElementById('modalOverlay').style.display = 'flex';
+    // Tworzymy zawartość formularza (HTML) dynamicznie
+    let formHtml = `<h2>${translations[currentLanguage].shopForm.title} ${shopName}</h2>
+      <form id="dynamicForm">
+        <label for="productName">${translations[currentLanguage].shopForm.productName}</label><br>
+        <input type="text" id="productName" required><br>
+        <label for="price">${translations[currentLanguage].shopForm.price}</label><br>
+        <input type="text" id="price" required><br>
+        <label for="productCode">${translations[currentLanguage].shopForm.productCode}</label><br>
+        <input type="text" id="productCode" required><br>
+        <label for="photo">${translations[currentLanguage].shopForm.photo}</label><br>
+        <input type="text" id="photo"><br>`;
+    if (shopName.toLowerCase() === "mediaexpert") {
+      formHtml += `<label for="deliveryTime">${translations[currentLanguage].shopForm.deliveryDate}</label><br>
+                   <input type="text" id="deliveryTime" placeholder="YYYY-MM-DD" required><br>
+                   <label for="address">${translations[currentLanguage].shopForm.address}</label><br>
+                   <input type="text" id="address" required><br>
+                   <label for="city">${translations[currentLanguage].shopForm.city}</label><br>
+                   <input type="text" id="city" required><br>
+                   <label for="phoneNumber">${translations[currentLanguage].shopForm.phoneNumber}</label><br>
+                   <input type="text" id="phoneNumber" required><br>
+                   <label for="productCode">${translations[currentLanguage].shopForm.productCode}</label><br>
+                   <input type="text" id="productCode" required><br>`;
+    } else {
+      formHtml += `<label for="deliveryTime">${translations[currentLanguage].shopForm.deliveryTime}</label><br>
+                   <input type="text" id="deliveryTime" required><br>`;
+    }
+    formHtml += `<br>
+        <button type="submit">${translations[currentLanguage].shopForm.submit}</button>
+      </form>`;
+
+    // Wstrzykujemy ten kod do #formContainer (zostawiamy przycisk X bez zmian)
     const formContainer = document.getElementById('formContainer');
-    formContainer.style.display = 'block';
-    formContainer.innerHTML = `<h2>Generowanie potwierdzenia dla ${shop.shopName}</h2>`;
+    // Usuwamy poprzednią zawartość (poza przyciskiem zamknięcia)
+    formContainer.innerHTML = `<button class="closeBtn" onclick="closeModal()">✕</button>` + formHtml;
 
-    // Parsowanie konfiguracji formularza (JSON)
-    let config = {};
-    if (shop.formConfig) {
-      try {
-        config = JSON.parse(shop.formConfig);
-      } catch (e) {
-        console.error('Błędny JSON w formConfig:', e);
-      }
-    }
-
-    const form = document.createElement('form');
-    form.id = 'dynamicShopForm';
-
-    // Tworzenie pól formularza dynamicznie
-    for (const field in config) {
-      const label = document.createElement('label');
-      label.textContent = config[field] + ":";
-      form.appendChild(label);
-
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = field;
-      input.id = field;
-      input.required = true;
-      form.appendChild(input);
-      form.appendChild(document.createElement('br'));
-      form.appendChild(document.createElement('br'));
-    }
-
-    // Dodajemy przycisk do wysyłania formularza
-    const btn = document.createElement('button');
-    btn.type = 'submit';
-    btn.textContent = 'Wyślij potwierdzenie';
-    form.appendChild(btn);
-    formContainer.appendChild(form);
-
-    // Obsługa submit formularza
-    form.addEventListener('submit', function(e) {
+    // Dodajemy obsługę submit
+    document.getElementById('dynamicForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const userId = localStorage.getItem("loggedUserId");
       if (!userId) {
-        alert("Brak zalogowanego użytkownika.");
+        alert(translations[currentLanguage].noUser);
         return;
       }
-
-      const formData = {};
-      for (const field in config) {
-        formData[field] = document.getElementById(field).value;
+      let payload = {
+        userId: userId,
+        productName: document.getElementById('productName').value,
+        price: document.getElementById('price').value,
+        photo: document.getElementById('photo').value
+      };
+      if (shopName.toLowerCase() === "mediaexpert") {
+        payload.deliveryTime = document.getElementById('deliveryTime').value;
+        payload.address = document.getElementById('address').value;
+        payload.city = document.getElementById('city').value;
+        payload.phoneNumber = document.getElementById('phoneNumber').value;
+        payload.productCode = document.getElementById('productCode').value;
+      } else {
+        payload.deliveryTime = document.getElementById('deliveryTime').value;
       }
-      formData.userId = userId;
-
-      // Wywołanie endpointu dla sklepu (np. POST /api/shops/{shopName})
-      fetch('/api/shops/' + shop.shopName, {
+      fetch('/api/shops/' + shopName, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
       .then(response => {
-        if (!response.ok) throw new Error("Błąd: " + response.statusText);
+        if (!response.ok) throw new Error(translations[currentLanguage].errorSending + response.statusText);
         return response.text();
       })
       .then(data => {
         alert(data);
+        loadAccountData();
+        closeModal();
       })
-      .catch(err => {
-        alert('Błąd przy wysyłaniu potwierdzenia: ' + err);
+      .catch(error => {
+        alert(translations[currentLanguage].errorSending + error);
       });
     });
   }
 
+  // Funkcja zamykająca modal
+  function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+  }
+
+  // Obsługa kliknięcia w strzałkę – rozwijanie/zwijanie panelu zmiany e-maila
+  document.getElementById('toggleEmailBtn').addEventListener('click', function() {
+    const emailContainer = document.getElementById('emailContainer');
+    if (emailContainer.style.display === 'none' || emailContainer.style.display === '') {
+      emailContainer.style.display = 'block';
+    } else {
+      emailContainer.style.display = 'none';
+    }
+  });
+
+  // Formularz zmiany e-maila (wysyłanie)
+  document.getElementById('emailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const userId = localStorage.getItem("loggedUserId");
+    if (!userId) {
+      alert(translations[currentLanguage].noUser);
+      return;
+    }
+    const newEmail = document.getElementById('newEmail').value;
+    fetch('/api/account/updateEmail', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newEmail })
+    })
+    .then(response => {
+      if (!response.ok) return response.text().then(text => { throw new Error(text); });
+      return response.text();
+    })
+    .then(data => {
+      alert(translations[currentLanguage].successEmail + data);
+      loadAccountData();
+    })
+    .catch(err => {
+      alert(translations[currentLanguage].errorEmail + err.message);
+    });
+  });
+
+  // Wylogowanie
   function logout() {
     localStorage.removeItem("loggedUserId");
     localStorage.removeItem("jwtToken");
     window.location.href = "login.html";
   }
 
-  // Ładujemy dane konta oraz sklepy przy starcie
+  // Inicjalizacja
   window.onload = function() {
+    updateText();
     loadAccountData();
-    loadShops();
+    // Ładuj sklepy tylko, gdy język polski
+    if (currentLanguage === 'pl') {
+      loadShops();
+    } else {
+      document.getElementById('shopsContainerDynamic').style.display = 'none';
+    }
   };
 </script>
 </body>

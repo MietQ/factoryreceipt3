@@ -12,7 +12,7 @@ public class StockxGenerator {
 
     public static Map<String, Object> generate(StockxRequest request) {
         // 1) Parsowanie ceny
-        String priceInput = (request.price != null && !request.price.isEmpty()) ? request.price : "0";
+        String priceInput = (request.getPrice() != null && !request.getPrice().isEmpty()) ? request.getPrice() : "0";
         String cleanPrice = priceInput.replaceAll("[^\\d.]", "");
         double priceValue;
         try {
@@ -48,19 +48,19 @@ public class StockxGenerator {
                 : String.format("$%.2f", finalPrice);
 
         // 4) Zdjęcie
-        String photo = (request.photo != null && !request.photo.isEmpty()) ? request.photo : "Brak";
+        String photo = (request.getPhoto() != null && !request.getPhoto().isEmpty()) ? request.getPhoto() : "Brak";
 
         // 5) Budujemy mapę zmiennych
         Map<String, Object> variables = new HashMap<>();
-        variables.put("productName",  request.productName);
+        variables.put("productName",  request.getProductName());
         variables.put("price",        formattedPrice);
         variables.put("fee",          formattedFee);
         variables.put("shipping",     formattedShipping);
         variables.put("finalPrice",   formattedFinalPrice);
         variables.put("orderNumber",  orderNumber);
-        variables.put("styleid",      request.styleid != null ? request.styleid : "Brak");
-        variables.put("size",         request.size != null ? request.size : "Brak");
-        variables.put("deliveryTime", request.deliveryTime != null ? request.deliveryTime : "Brak");
+        variables.put("styleid",      request.getStyleid() != null ? request.getStyleid() : "Brak");
+        variables.put("size",         request.getSize() != null ? request.getSize() : "Brak");
+        variables.put("deliveryTime", request.getDeliveryTime() != null ? request.getDeliveryTime() : "Brak");
         variables.put("photo",        photo);
 
         return variables;
