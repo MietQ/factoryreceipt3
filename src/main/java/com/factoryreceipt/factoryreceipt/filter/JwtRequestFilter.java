@@ -29,12 +29,24 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        final String authorizationHeader = request.getHeader("Authorization");
+        String path = request.getServletPath();
+        // Jeśli żądanie dotyczy publicznych zasobów, pomiń weryfikację tokenu
+        if (path.equals("/index.html") ||
+                path.equals("/login.html") ||
+                path.equals("/") ||
+                path.equals("/main") || path.equals("/main/") ||
+                path.startsWith("/css/") ||
+                path.startsWith("/js/") ||
+                path.startsWith("/images/") ||
+                path.startsWith("/h2-console/")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
+        final String authorizationHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
 
-        // Oczekujemy nagłówka "Authorization: Bearer <token>"
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
@@ -67,4 +79,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
         chain.doFilter(request, response);
     }
+
+
 }
